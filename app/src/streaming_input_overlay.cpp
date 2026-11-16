@@ -221,6 +221,18 @@ void StreamingInputOverlay::populateHintWithDefaultItems() {
                                                this->toggleKeyboard();
                                                return true;
                                            }));
+
+    // System keyboard shows what you type; the whole string is sent on OK.
+    actionsToFree.push_back(registerAction("Text", ControllerButton::BUTTON_Y,
+                                           [](View* view) {
+        Application::getPlatform()->getImeManager()->openForText(
+            [](const std::string& text) {
+                if (!text.empty())
+                    LiSendUtf8TextEvent(text.c_str(), (unsigned int)text.size());
+            },
+            "Send text to PC", "", 500, "", 0);
+        return true;
+    }));
 }
 
 void sendClick(char key) {

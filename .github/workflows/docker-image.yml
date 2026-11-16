@@ -2,7 +2,7 @@ name: Build Moonlight-Switch
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, text-input ]
   pull_request:
     branches: [ master ]
 
