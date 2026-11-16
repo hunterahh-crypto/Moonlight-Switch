@@ -6,6 +6,7 @@
 //
 
 #include "streaming_input_overlay.hpp"
+#include "ingame_overlay_view.hpp"
 #include <Limelight.h>
 
 using namespace brls;
@@ -266,10 +267,20 @@ void StreamingInputOverlay::populateHintWithKeyboardItems() {
 
     actionsToFree.push_back(registerAction("mouse_input/delete"_i18n,
                                            ControllerButton::BUTTON_X,
-                                           [](View* view) { 
+                                           [](View* view) {
                                                 sendClick(0x08);
-                                                return true; 
+                                                return true;
                                             }, false, true));
+
+    // Only while the keyboard is open: leave mouse/keyboard mode and open the stream menu.
+    actionsToFree.push_back(registerAction("Menu", ControllerButton::BUTTON_START,
+                                           [this](View* view) {
+        StreamingView* streamView = this->streamView;
+        this->dismiss([streamView] {
+            Application::pushActivity(new Activity(new IngameOverlay(streamView)));
+        });
+        return true;
+    }));
 }
 
 brls::AppletFrame* StreamingInputOverlay::getAppletFrame() { return applet; }
