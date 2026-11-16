@@ -17,6 +17,9 @@
 #include "MoonlightSession.hpp"
 #include "two_finger_scroll_recognizer.hpp"
 
+// Opens the system keyboard (input is visible) and sends the result to the host as UTF-8.
+void openTextInputToHost();
+
 class StreamingView : public brls::Box {
   public:
     StreamingView(const Host& host, const AppInfo& app);
@@ -43,6 +46,7 @@ class StreamingView : public brls::Box {
     LoadingOverlay* loader = nullptr;
     Box* keyboardHolder = nullptr;
     KeyboardView* keyboard = nullptr;
+    brls::Box* keyboardBar = nullptr;
     bool blocked = false;
     bool terminated = false;
     bool tempInputLock = false;

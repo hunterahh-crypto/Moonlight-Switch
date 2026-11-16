@@ -370,14 +370,69 @@ void StreamingView::addKeyboard() {
     if (keyboard)
         return;
 
+    // Bar above the touch keyboard: Text (system keyboard with visible input) and Menu.
+    keyboardBar = new Box(Axis::ROW);
+    keyboardBar->setJustifyContent(JustifyContent::FLEX_END);
+    keyboardBar->setPadding(8, 24, 8, 24);
+    keyboardBar->setBackgroundColor(nvgRGBA(120, 120, 120, 200));
+    // Swallow taps/swipes (same as KeyboardView) so they don't click the PC
+    // mouse or close the keyboard.
+    keyboardBar->addGestureRecognizer(
+        new TapGestureRecognizer([](TapGestureStatus status, Sound* sound) {}));
+    keyboardBar->addGestureRecognizer(new PanGestureRecognizer(
+        [](PanGestureStatus status, Sound* sound) {}, PanAxis::ANY));
+
+    auto addBarButton = [this](const std::string& title,
+                               std::function<void()> action) {
+        auto button = new Box();
+        button->setWidth(160);
+        button->setHeight(56);
+        button->setMarginLeft(16);
+        button->setCornerRadius(8);
+        button->setBackgroundColor(nvgRGB(60, 60, 60));
+        button->setAlignItems(AlignItems::CENTER);
+        button->setJustifyContent(JustifyContent::CENTER);
+        auto label = new Label();
+        label->setText(title);
+        label->setFontSize(24);
+        label->setTextColor(nvgRGB(255, 255, 255));
+        button->addView(label);
+        auto tap = new TapGestureRecognizer(
+            [action](TapGestureStatus status, Sound* sound) {
+                // Deferred: the action may remove this button.
+                if (status.state == GestureState::END)
+                    brls::sync(action);
+            });
+        tap->setForceRecognision(true);
+        button->addGestureRecognizer(tap);
+        keyboardBar->addView(button);
+    };
+    addBarButton("Text", [] { openTextInputToHost(); });
+    addBarButton("Menu", [this] {
+        removeKeyboard();
+        Application::pushActivity(new Activity(new IngameOverlay(this)));
+    });
+    keyboardHolder->addView(keyboardBar);
+
     keyboard = new KeyboardView(false);
     keyboardHolder->addView(keyboard);
+}
+
+void openTextInputToHost() {
+    Application::getPlatform()->getImeManager()->openForText(
+        [](const std::string& text) {
+            if (!text.empty())
+                LiSendUtf8TextEvent(text.c_str(), (unsigned int)text.size());
+        },
+        "Send text to PC", "", 500, "", 0);
 }
 
 void StreamingView::removeKeyboard() {
     if (!keyboard)
         return;
 
+    keyboardBar->removeFromSuperView();
+    keyboardBar = nullptr;
     keyboard->removeFromSuperView();
     keyboard = nullptr;
     Application::giveFocus(this);
